@@ -14,7 +14,7 @@ def line_graph_expansion(G: nx.DiGraph, A: None | Schedule) -> tuple[nx.DiGraph,
         for _, w in G.out_edges(v):
             G_prime.add_edge((u, v), (v, w))
 
-    A_prime = {}
+    A_prime: Schedule = {}
     if A is not None:
 
         # g_prime_in_sdegree = dict(G_prime.in_degree())
@@ -28,7 +28,7 @@ def line_graph_expansion(G: nx.DiGraph, A: None | Schedule) -> tuple[nx.DiGraph,
             u_schedule: TransferMap = {}
 
             for v in G_prime.predecessors(w):
-                u_schedule[(v, v)] = Fraction(1)
+                u_schedule[TransferKey(v, v)] = Fraction(1)
 
             A_prime[t_prime_1][w] = {
                 'load_U': 1.0,
@@ -55,7 +55,8 @@ def line_graph_expansion(G: nx.DiGraph, A: None | Schedule) -> tuple[nx.DiGraph,
 
                         for v_prime in G.predecessors(v):
                             if ((v_prime, v) != (w, w_prime)):
-                                transfer_key = ((v_prime, v), (u, w))
+                                transfer_key = TransferKey(
+                                    (v_prime, v), (u, w))
                                 A_prime[t_prime][dest]['transfers'][transfer_key] = fraction
 
         # Recalculate the maximum load U for t > 1
@@ -114,7 +115,8 @@ def degree_expansion(G: nx.DiGraph, A: None | Schedule, n: int) -> tuple[nx.DiGr
                     new_transfers: TransferMap = {}
                     for (v, u), fraction in transfers.items():
                         for j in range(n):
-                            new_transfers[((v, j), (u, j))] = fraction
+                            new_transfers[TransferKey(
+                                (v, j), (u, j))] = fraction
 
                     A_prime[t][(w, i)] = {
                         'load_U': load_U,
@@ -139,7 +141,7 @@ def degree_expansion(G: nx.DiGraph, A: None | Schedule, n: int) -> tuple[nx.DiGr
                     if i != j:
                         u_i = (u, i)
                         for v_alpha in vs:
-                            A_prime[t_final][u_j]['transfers'][(
+                            A_prime[t_final][u_j]['transfers'][TransferKey(
                                 u_i, v_alpha)] = fraction_per_ring_link
 
     return G_prime, A_prime
@@ -173,22 +175,36 @@ if __name__ == '__main__':
     # G = nx.DiGraph()
     # nodes = ['a', 'b', 'c', 'd']
     # nx.add_cycle(G, nodes)
-    # # visualize_digraph(G, 'original')
+    # visualize_digraph(G, 'original')
     # A = BFB(G)
     # print_schedule(A)
     # G_prime, A_prime = degree_expansion(G, A, 2)
-    # # visualize_digraph(G_prime, 'degree expansion')
+    # visualize_digraph(G_prime, 'degree expansion')
     # print_schedule(A_prime)
 
-    G = nx.DiGraph()
-    nodes = ['a', 'b', 'c', 'd']
-    edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
-             ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
-    G.add_nodes_from(nodes)
-    G.add_edges_from(edges)
+    # G = nx.DiGraph()
+    # nodes = ['a', 'b', 'c', 'd']
+    # edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
+    #          ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
+    # G.add_nodes_from(nodes)
+    # G.add_edges_from(edges)
     # visualize_digraph(G, 'original')
-    A = BFB(G)
-    print_schedule(A)
-    G_prime, A_prime = line_graph_expansion(G, A)
+    # A = BFB(G)
+    # print_schedule(A)
+    # G_prime, A_prime = line_graph_expansion(G, A)
     # visualize_digraph(G_prime, 'line graph expansion')
-    print_schedule(A_prime)
+    # print_schedule(A_prime)
+
+    G1 = nx.DiGraph()
+    nx.add_cycle(G1, list(range(4)))
+
+    G2 = nx.DiGraph()
+    nx.add_cycle(G2, list(range(8)))
+
+    G3 = cartesian_product_expansion(G1, G2)
+
+    G4 = cartesian_product_expansion(G3, G3)
+
+    A4 = BFB(G4)
+
+    print_schedule(A4, full_details=False)

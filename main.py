@@ -1,6 +1,5 @@
-def main():
-    print("Hello from efficient-direct!")
+import cvxpy as cp
 
+print("已安装的求解器:", cp.installed_solvers())
 
-if __name__ == "__main__":
-    main()
+print(cp.settings.__file__)
