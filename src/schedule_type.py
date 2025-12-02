@@ -21,20 +21,24 @@ class ScheduleEntry(TypedDict):
 Schedule = Dict[TimeStep, Dict[Node, ScheduleEntry]]
 
 
-def print_schedule(schedule: 'Schedule', full_details: bool = True):
+def print_schedule(schedule: 'Schedule', full_details: bool = True) -> Tuple[int, float]:
+    """
+    Returns: Tuple[int, float]: TL, TB
+    """
+
     time_steps = sorted(schedule.keys())
 
     if not time_steps:
         if full_details:
             print("empty schedule")
-        return
+        return -1, -1
 
     if full_details:
         print("=" * 60)
         print('print schedule begin')
         print("=" * 45)
 
-    T_B = 0
+    T_B = 0.
 
     for t in time_steps:
         step_schedule = schedule[t]
@@ -73,8 +77,10 @@ def print_schedule(schedule: 'Schedule', full_details: bool = True):
     if full_details:
         print("=" * 45)
 
-    print(f"total T: {len(time_steps)}, total U: {T_B:.4f}")
+    print(f"total T: {len(time_steps)}, U: {T_B:.4f}")
 
     if full_details:
         print('print schedule end')
         print("=" * 60)
+
+    return len(time_steps), T_B

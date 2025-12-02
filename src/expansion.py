@@ -168,33 +168,34 @@ def cartesian_product_expansion(G1: nx.DiGraph, G2: nx.DiGraph) -> nx.DiGraph:
     return G_product
 
 
-if __name__ == '__main__':
-    from visualize_graph import *
-    from bfb_schedule import *
+def _main1():
+    G = nx.DiGraph()
+    nodes = ['a', 'b', 'c', 'd']
+    nx.add_cycle(G, nodes)
+    visualize_digraph(G, 'original')
+    A = BFB(G)
+    print_schedule(A)
+    G_prime, A_prime = degree_expansion(G, A, 2)
+    visualize_digraph(G_prime, 'degree expansion')
+    print_schedule(A_prime)
 
-    # G = nx.DiGraph()
-    # nodes = ['a', 'b', 'c', 'd']
-    # nx.add_cycle(G, nodes)
-    # visualize_digraph(G, 'original')
-    # A = BFB(G)
-    # print_schedule(A)
-    # G_prime, A_prime = degree_expansion(G, A, 2)
-    # visualize_digraph(G_prime, 'degree expansion')
-    # print_schedule(A_prime)
 
-    # G = nx.DiGraph()
-    # nodes = ['a', 'b', 'c', 'd']
-    # edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
-    #          ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
-    # G.add_nodes_from(nodes)
-    # G.add_edges_from(edges)
-    # visualize_digraph(G, 'original')
-    # A = BFB(G)
-    # print_schedule(A)
-    # G_prime, A_prime = line_graph_expansion(G, A)
-    # visualize_digraph(G_prime, 'line graph expansion')
-    # print_schedule(A_prime)
+def _main2():
+    G = nx.DiGraph()
+    nodes = ['a', 'b', 'c', 'd']
+    edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
+             ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    visualize_digraph(G, 'original')
+    A = BFB(G)
+    print_schedule(A)
+    G_prime, A_prime = line_graph_expansion(G, A)
+    visualize_digraph(G_prime, 'line graph expansion')
+    print_schedule(A_prime)
 
+
+def _main3():
     G1 = nx.DiGraph()
     nx.add_cycle(G1, list(range(4)))
 
@@ -208,3 +209,80 @@ if __name__ == '__main__':
     A4 = BFB(G4)
 
     print_schedule(A4, full_details=False)
+
+
+def _main4():
+    G = nx.DiGraph()
+    nodes = ['a', 'b', 'c', 'd']
+    edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
+             ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    # visualize_digraph(G, 'original')
+
+    A = BFB(G)
+    print_schedule(A, False)
+    print_schedule_bound(G)
+
+    for i in range(1, 10):
+        print(f'expand {i}')
+        G, A = line_graph_expansion(G, A)
+        t, b = print_schedule(A, False)  # type: ignore
+        n, d, ob = print_schedule_bound(G)
+        print(b / ob)
+        print(n)
+
+
+def _main5():
+    G = nx.DiGraph()
+    U = ['u1', 'u2', 'u3', 'u4']
+    V = ['v1', 'v2', 'v3', 'v4']
+    nodes = U + V
+
+    edges = []
+    for u in U:
+        for v in V:
+            edges.append((u, v))
+            edges.append((v, u))
+
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    # visualize_digraph(G, 'original')
+
+    A = BFB(G)
+    print_schedule(A, False)
+    print_schedule_bound(G)
+
+    for i in range(1, 4):
+        print(f'expand {i}')
+        G, A = line_graph_expansion(G, A)
+        t, b = print_schedule(A, False)  # type: ignore
+        n, d, ob = print_schedule_bound(G)
+        print(b / ob)
+        print(n)
+        # visualize_digraph(G, 'e1')
+
+
+def _main6():
+    G = nx.complete_graph(3, create_using=nx.DiGraph())
+    G = cartesian_product_expansion(G, G)
+
+    A = BFB(G)
+    print_schedule(A, False)
+    print_schedule_bound(G)
+
+    for i in range(1, 4):
+        print(f'expand {i}')
+        G, A = line_graph_expansion(G, A)
+        t, b = print_schedule(A, False)  # type: ignore
+        n, d, ob = print_schedule_bound(G)
+        print(b / ob)
+        print(n)
+        # visualize_digraph(G, 'e1')
+
+
+if __name__ == '__main__':
+    from bfb_schedule import *
+    from visualize_graph import *
+    from graph import *
+    _main2()
