@@ -128,7 +128,7 @@ def _main1():
 
     schedule = BFB(G1)
 
-    print_schedule(schedule)
+    utils.print_schedule(schedule)
 
 
 def _main2():
@@ -143,8 +143,8 @@ def _main2():
 
     A3 = BFB(G3)
 
-    print_schedule(A3)
-    print_schedule_bound(G3)
+    utils.print_schedule(A3)
+    utils.print_schedule_bound(G3)
 
     visualize_digraph(G3, 'example')
     visualize_schedule(G3, A3, 5)
@@ -153,5 +153,6 @@ def _main2():
 if __name__ == "__main__":
     from visualize import *
     from graph import *
+    import utils
     # _main1()
     _main2()

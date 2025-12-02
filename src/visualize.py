@@ -1,12 +1,12 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from typing import Dict, Tuple, NewType, TypedDict, Any, NamedTuple
+from typing import Dict, Tuple, Any
 
 # 假设这些类型定义都来自于 schedule_type 模块
-from schedule_type import Node, Schedule, TransferMap, TransferKey
+from schedule_type import *
 
 
-def visualize_digraph(G: nx.DiGraph, title: str):
+def visualize_digraph(G: nx.DiGraph, title: str | None = None):
 
     # 1. 准备绘图画布
     plt.figure(figsize=(6, 6))
@@ -35,7 +35,8 @@ def visualize_digraph(G: nx.DiGraph, title: str):
     nx.draw_networkx_labels(G, pos, font_size=12, font_color='black')
 
     # 6. 设置标题和显示
-    plt.title(title, fontsize=15)
+    if title:
+        plt.title(title, fontsize=15)
     plt.axis('off')
     plt.show()
 
@@ -155,7 +156,8 @@ def visualize_schedule(G: nx.DiGraph, schedule: Schedule, source_node: Node):
 
 if __name__ == "__main__":
     # 假设 bfb_schedule.py 已经被修复，可以正常导入 BFB 函数
-    from bfb_schedule import BFB, print_schedule
+    from bfb_schedule import BFB
+    import utils
 
     # 示例 1: 环形图 (原始示例)
     # G_ring = nx.DiGraph()
@@ -181,7 +183,7 @@ if __name__ == "__main__":
     # 注意：如果 BFB 依赖于 print_schedule, graph, schedule_type，请确保 bfb_schedule.py 顶部导入正确。
     try:
         schedule_example = BFB(G_example)
-        print_schedule(schedule_example)
+        utils.print_schedule(schedule_example)
         visualize_schedule(G_example, schedule_example, source_node_example)
     except NameError:
         print("\nNote: BFB or print_schedule function not found. Please ensure bfb_schedule.py is correctly structured and imported.")

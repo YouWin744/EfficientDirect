@@ -173,12 +173,12 @@ def _main1():
     G = nx.DiGraph()
     nodes = ['a', 'b', 'c', 'd']
     nx.add_cycle(G, nodes)
-    visualize_digraph(G, 'original')
+    visualize.visualize_digraph(G, 'original')
     A = BFB(G)
-    print_schedule(A)
+    utils.print_schedule(A)
     G_prime, A_prime = degree_expansion(G, A, 2)
-    visualize_digraph(G_prime, 'degree expansion')
-    print_schedule(A_prime)
+    visualize.visualize_digraph(G_prime, 'degree expansion')
+    utils.print_schedule(A_prime)
 
 
 def _main2():
@@ -188,12 +188,12 @@ def _main2():
              ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
     G.add_nodes_from(nodes)
     G.add_edges_from(edges)
-    visualize_digraph(G, 'original')
+    visualize.visualize_digraph(G, 'original')
     A = BFB(G)
-    print_schedule(A)
+    utils.print_schedule(A)
     G_prime, A_prime = line_graph_expansion(G, A)
-    visualize_digraph(G_prime, 'line graph expansion')
-    print_schedule(A_prime)
+    visualize.visualize_digraph(G_prime, 'line graph expansion')
+    utils.print_schedule(A_prime)
 
 
 def _main3():
@@ -209,7 +209,7 @@ def _main3():
 
     A4 = BFB(G4)
 
-    print_schedule(A4, full_details=False)
+    utils.print_schedule(A4, full_details=False)
 
 
 def _main4():
@@ -219,19 +219,22 @@ def _main4():
              ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
     G.add_nodes_from(nodes)
     G.add_edges_from(edges)
-    # visualize_digraph(G, 'original')
-
     A = BFB(G)
-    print_schedule(A, False)
-    print_schedule_bound(G)
 
-    for i in range(1, 10):
-        print(f'expand {i}')
+    # visualize.visualize_digraph(G, 'original')
+    utils.print_schedule(A, False)
+    utils.print_schedule_bound(G)
+
+    for i in range(1, 8):
+        print(f'\nexpand {i}')
         G, A = line_graph_expansion(G, A)
-        t, b = print_schedule(A, False)  # type: ignore
-        n, d, ob = print_schedule_bound(G)
-        print(b / ob)
-        print(n)
+        t, b = utils.print_schedule(A, False)  # type: ignore
+        n, d, ob = utils.print_schedule_bound(G)
+        print(f'TB/TB*: {b / ob}')
+        print(f'nodes: {n}')
+        if i == 1:
+            # visualize.visualize_schedule(G, A, ('c', 'a'))
+            utils.print_schedule(A)
 
 
 def _main5():
@@ -248,20 +251,23 @@ def _main5():
 
     G.add_nodes_from(nodes)
     G.add_edges_from(edges)
-    # visualize_digraph(G, 'original')
-
     A = BFB(G)
-    print_schedule(A, False)
-    print_schedule_bound(G)
+
+    visualize.visualize_digraph(G, 'original')
+    utils.print_schedule(A, False)
+    utils.print_schedule_bound(G)
+    visualize.visualize_schedule(G, A, list(G.nodes)[2])
 
     for i in range(1, 4):
-        print(f'expand {i}')
+        print(f'\nexpand {i}')
         G, A = line_graph_expansion(G, A)
-        t, b = print_schedule(A, False)  # type: ignore
-        n, d, ob = print_schedule_bound(G)
-        print(b / ob)
-        print(n)
-        # visualize_digraph(G, 'e1')
+        t, b = utils.print_schedule(A, False)  # type: ignore
+        n, d, ob = utils.print_schedule_bound(G)
+        print(f'TB/TB*: {b / ob}')
+        print(f'nodes: {n}')
+        # visualize.visualize_digraph(G, 'e1')
+        if i == 1:
+            visualize.visualize_schedule(G, A, list(G.nodes)[10])
 
 
 def _main6():
@@ -269,21 +275,29 @@ def _main6():
     G = cartesian_product_expansion(G, G)
 
     A = BFB(G)
-    print_schedule(A, False)
-    print_schedule_bound(G)
+    utils.print_schedule(A, False)
+    utils.print_schedule_bound(G)
+    visualize.visualize_schedule(G, A, list(G.nodes)[2])
 
     for i in range(1, 4):
-        print(f'expand {i}')
+        print(f'\nexpand {i}')
         G, A = line_graph_expansion(G, A)
-        t, b = print_schedule(A, False)  # type: ignore
-        n, d, ob = print_schedule_bound(G)
-        print(b / ob)
-        print(n)
-        # visualize_digraph(G, 'e1')
+        t, b = utils.print_schedule(A, False)  # type: ignore
+        n, d, ob = utils.print_schedule_bound(G)
+        print(f'TB/TB*: {b / ob}')
+        print(f'nodes: {n}')
+        # visualize.visualize_digraph(G, 'e1')
+        if i == 1:
+            visualize.visualize_schedule(G, A, list(G.nodes)[10])
 
 
 if __name__ == '__main__':
-    from bfb_schedule import *
-    from visualize import *
-    from graph import *
-    _main2()
+    from bfb_schedule import BFB
+    import visualize
+    import utils
+    # _main1()
+    # _main2()
+    # _main3()
+    # _main4()    # recursive line_graph_expansion
+    _main5()    # recursive line_graph_expansion for K4,4
+    # _main6()    # # recursive line_graph_expansion for H2,3
