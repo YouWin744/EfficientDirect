@@ -1,6 +1,7 @@
 import networkx as nx
-from schedule_type import *
 import warnings
+
+from schedule_type import *
 
 
 def line_graph_expansion(G: nx.DiGraph, A: None | Schedule) -> tuple[nx.DiGraph, Schedule]:
@@ -283,6 +284,6 @@ def _main6():
 
 if __name__ == '__main__':
     from bfb_schedule import *
-    from visualize_graph import *
+    from visualize import *
     from graph import *
     _main2()

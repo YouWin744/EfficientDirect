@@ -1,10 +1,10 @@
 import networkx as nx
 import cvxpy as cp
-from schedule_type import *
 import concurrent.futures
 import time
 from typing import Dict
-from graph import *
+
+from schedule_type import *
 
 
 def BFB(G: nx.DiGraph) -> Schedule:
@@ -147,10 +147,11 @@ def _main2():
     print_schedule_bound(G3)
 
     visualize_digraph(G3, 'example')
+    visualize_schedule(G3, A3, 5)
 
 
 if __name__ == "__main__":
-    from visualize_graph import *
+    from visualize import *
     from graph import *
-    _main1()
-    # _main2()
+    # _main1()
+    _main2()
