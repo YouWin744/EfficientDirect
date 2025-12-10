@@ -10,4 +10,5 @@ dependencies = [
     "networkx>=3.6",
     "numpy>=2.3.5",
     "pyscipopt>=6.0.0",
+    "tqdm>=4.67.1",
 ]
