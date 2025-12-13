@@ -12,3 +12,8 @@ dependencies = [
     "pyscipopt>=6.0.0",
     "tqdm>=4.67.1",
 ]
+
+[tool.uv.workspace]
+members = [
+    "DistReg",
+]

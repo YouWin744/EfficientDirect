@@ -291,13 +291,85 @@ def _main6():
             visualize.visualize_schedule(G, A, list(G.nodes)[10])
 
 
+def _main7():
+    G = nx.DiGraph()
+    nodes = ['a', 'b', 'c', 'd']
+    edges = [('a', 'c'), ('c', 'a'), ('a', 'd'), ('d', 'a'),
+             ('b', 'c'), ('c', 'b'), ('b', 'd'), ('d', 'b')]
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+    A = BFB(G)
+    tl, tb = utils.get_TL_TB(G, A)
+    print(f'tl = {tl}, tb = {tb}')
+
+    for i in range(1, 8):
+        print(f'\nexpand {i}')
+        n = G.number_of_nodes()
+        expect_tb = tb + 1 / n
+        G, A = line_graph_expansion(G, A)
+        tl, tb = utils.get_TL_TB(G, A)
+        print(f'tl = {tl}, tb = {tb}, expect_tb = {expect_tb}')
+
+
+def _main8():
+    import graph
+    # G1 = graph.generalized_kautz_graph(2, 6)
+    G1 = graph.torus([4, 4])
+    G2 = graph.generalized_kautz_graph(2, 7)
+
+    A1 = BFB(G1, False)
+    n1 = G1.number_of_nodes()
+    tl1, tb1 = utils.get_TL_TB(G1, A1)
+    print(
+        f'G1: tl = {tl1}, tb = {tb1}, bound = {(n1 - 1) / n1}, {tb1 / ((n1 - 1) / n1)}')
+
+    A2 = BFB(G2, False)
+    tl2, tb2 = utils.get_TL_TB(G2, A2)
+    n2 = G2.number_of_nodes()
+    print(
+        f'G2: tl = {tl2}, tb = {tb2}, bound = {(n2 - 1) / n2}, {tb2 / ((n2 - 1) / n2)}')
+
+    G3 = cartesian_product_expansion(G1, G2)
+    A3 = BFB(G3)
+    visualize.visualize_digraph(G1, 'G1')
+    visualize.visualize_digraph(G2, 'G2')
+    # visualize.visualize_digraph(G3, 'G3')
+    tl3, tb3 = utils.get_TL_TB(G3, A3)
+    n3 = G3.number_of_nodes()
+    print(
+        f'G3: tl = {tl3}, tb = {tb3}, bound = {(n3 - 1) / n3}, {tb3 / ((n3 - 1) / n3)}',)
+
+
+def _main9():
+    import graph
+    G = graph.ring(4, True)
+    A = BFB(G, False)
+    n0 = G.number_of_nodes()
+    tl, tb0 = utils.get_TL_TB(G, A)
+    print(f'G: tl = {tl}, tb = {tb0}, bound = {(n0 - 1) / n0}')
+
+    G0 = graph.ring(4, True)
+    for i in range(2, 4):
+        print(f'\nexpand power {i}')
+        expect_tb = tb0 * n0 / (n0 - 1) * (n0 ** i - 1) / (n0 ** i)
+        G = cartesian_product_expansion(G0, G)
+        A = BFB(G, True)
+        tl, tb = utils.get_TL_TB(G, A)
+        n = G.number_of_nodes()
+        print(
+            f'G^{i}: tl = {tl}, tb = {tb}, expect_tb = {expect_tb}, bound = {(n - 1) / n}')
+
+
 if __name__ == '__main__':
     from bfb_schedule import BFB
     import visualize
     import utils
     # _main1()
     # _main2()
-    # _main3()
+    # _main3()    # 1024
     # _main4()    # recursive line_graph_expansion
-    _main5()    # recursive line_graph_expansion for K4,4
+    # _main5()    # recursive line_graph_expansion for K4,4
     # _main6()    # # recursive line_graph_expansion for H2,3
+    # _main7()    # recursive line_graph_expansion
+    # _main8()    # cartessian product
+    _main9()    # cartessian power

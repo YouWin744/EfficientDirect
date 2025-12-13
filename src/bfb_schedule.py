@@ -9,7 +9,7 @@ from tqdm import tqdm
 from schedule_type import *
 
 
-def BFB(G: nx.DiGraph) -> Schedule:
+def BFB(G: nx.DiGraph, print_detail: bool = True) -> Schedule:
     """
     calculate breadth-first-broadcast (BFB) schedule
     return: dict of schedule
@@ -26,7 +26,8 @@ def BFB(G: nx.DiGraph) -> Schedule:
     except ValueError:
         diameter = 0
 
-    print(f'Diameter: {diameter}')
+    if print_detail:
+        print(f'Diameter: {diameter}')
 
     class ProblemTask:
         def __init__(self, t: TimeStep, u: Node, problem: cp.Problem, x_vars: Dict[Tuple[Node, Node], cp.Variable], U: cp.Variable):
@@ -40,7 +41,6 @@ def BFB(G: nx.DiGraph) -> Schedule:
         problems_to_solve: List[ProblemTask] = []
 
         for u_index, u in enumerate(nodes):
-            # print(f"t={t},u={u_index}")
             sources_v = [v for v in nodes if path_lengths[v].get(u) == t]
             if not sources_v:
                 continue
@@ -109,7 +109,8 @@ def BFB(G: nx.DiGraph) -> Schedule:
             # Solve the LP problem
             problem.solve(solver=cp.SCIP)
         except cp.SolverError:
-            print(f"Solver failed for node {u} at step {t}")
+            if print_detail:
+                print(f"Solver failed for node {u} at step {t}")
             return (t, u, None)
 
         # save results
@@ -131,7 +132,6 @@ def BFB(G: nx.DiGraph) -> Schedule:
                 return (t, u, None)
         else:
             # The 'optimal' status check covers 'infeasible', 'unbounded', etc.
-            # print(f"No optimal solution for node {u} at step {t}. Status: {problem.status}")
             return (t, u, None)
 
     full_schedule: Schedule = {}
@@ -144,15 +144,19 @@ def BFB(G: nx.DiGraph) -> Schedule:
         if not problem_buffer:
             continue
 
-        print(
-            f'Time Step {current_t}: Solving {len(problem_buffer)} LP problems in parallel...')
+        if print_detail:
+            print(
+                f'Time Step {current_t}: Solving {len(problem_buffer)} LP problems in parallel...')
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             results_iterator = executor.map(
                 _solve_problem_task, problem_buffer)
 
-            results = list(tqdm(results_iterator, total=len(
-                problem_buffer), desc=f'Solving t={current_t} problems', unit='problem', leave=True))
+            if print_detail:
+                results = list(tqdm(results_iterator, total=len(
+                    problem_buffer), desc=f'Solving t={current_t} problems', unit='problem', leave=True))
+            else:
+                results = list(results_iterator)
 
         full_schedule[current_t] = {}
         for _, u, schedule_entry in results:
@@ -161,7 +165,8 @@ def BFB(G: nx.DiGraph) -> Schedule:
 
     time_end = time.time()
 
-    print(f'\nBFB search time cost: {(time_end - time_begin):.3f}')
+    if print_detail:
+        print(f'\nBFB search time cost: {(time_end - time_begin):.3f}')
 
     return full_schedule
 

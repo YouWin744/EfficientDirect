@@ -5,7 +5,7 @@ from typing import List, Tuple
 from expansion import cartesian_product_expansion
 
 
-def create_ring(n: int, directed: bool = True) -> nx.DiGraph:
+def ring(n: int, directed: bool = True) -> nx.DiGraph:
     G = nx.DiGraph()
     nodes = list(range(n))
     nx.add_cycle(G, nodes)
@@ -16,7 +16,7 @@ def create_ring(n: int, directed: bool = True) -> nx.DiGraph:
     return G
 
 
-def create_circulant_graph(n: int, generators: List[int], directed: bool = False) -> nx.DiGraph:
+def circulant_graph(n: int, generators: List[int], directed: bool = False) -> nx.DiGraph:
     G = nx.DiGraph()
     G.add_nodes_from(range(n))
 
@@ -51,21 +51,21 @@ def create_circulant_graph(n: int, generators: List[int], directed: bool = False
     return G
 
 
-def create_complete_graph(n: int) -> nx.DiGraph:
+def complete_graph(n: int) -> nx.DiGraph:
     return nx.complete_graph(n, create_using=nx.DiGraph())
 
 
-def create_torus(dimensions: List[int]) -> nx.DiGraph:
+def torus(dimensions: List[int]) -> nx.DiGraph:
     assert (len(dimensions) > 0)
-    G = create_ring(dimensions[0], False)
+    G = ring(dimensions[0], False)
     for d in dimensions[1:]:
-        G_prime = create_ring(d, False)
+        G_prime = ring(d, False)
         G = cartesian_product_expansion(G, G_prime)
     return G
 
 
-def create_generalized_kautz_graph(d: int, m: int) -> nx.DiGraph:
-    assert(d >= 1 and m >= 1)
+def generalized_kautz_graph(d: int, m: int) -> nx.DiGraph:
+    assert (d >= 1 and m >= 1)
 
     G = nx.DiGraph()
     G.add_nodes_from(range(m))
@@ -81,14 +81,14 @@ def create_generalized_kautz_graph(d: int, m: int) -> nx.DiGraph:
 
 
 def _main1():
-    G = create_circulant_graph(32, [2, 5, 7, 3, 11])
+    G = circulant_graph(32, [2, 5, 7, 3, 11])
     A = BFB(G)
     utils.print_schedule(A, False)
     utils.print_schedule_bound(G)
 
 
 def _main2():
-    G = create_torus([4, 4])
+    G = torus([4, 4])
     # G = create_torus([3, 3, 2])
     A = BFB(G)
     utils.print_schedule(A, True)
@@ -99,7 +99,7 @@ def _main2():
 
 
 def _main3():
-    G = create_ring(6, False)
+    G = ring(6, False)
     A = BFB(G)
     utils.print_schedule(A, False)
     utils.print_schedule_bound(G)
@@ -108,8 +108,57 @@ def _main3():
 
 
 def _main4():
-    G = create_generalized_kautz_graph(3, 16)
-    A = BFB(G)
+    G = generalized_kautz_graph(2, 17)
+    A = BFB(G, False)
+    utils.print_schedule(A, False)
+    utils.print_schedule_bound(G)
+    visualize.visualize_digraph(G)
+    # visualize.visualize_schedule(G, A, list(G.nodes)[0])
+
+
+def _main5():
+
+    def oo(n: int):
+        min_diameter = float('inf')
+        best_pairs = (0, 0)
+
+        # print(f'n = {n}')
+        for a1 in range(1, n // 2):
+            a2 = a1 + 1
+            G = circulant_graph(n, [a1, a2], False)
+            diameter = nx.diameter(G)
+
+            if diameter < min_diameter:
+                min_diameter = diameter
+                best_pairs = (a1, a2)
+
+        return best_pairs
+
+    n = 4
+    pairs = oo(4)
+    for i in range(5, 256):
+        new_pairs = oo(i)
+        if pairs != new_pairs:
+            print(f"{n} ~ {i - 1}, {pairs}")
+            pairs = new_pairs
+            n = i
+
+
+def _main6():
+    # G = circulant_graph(4, [1, 2], False)
+    G = circulant_graph(16, [2, 3], False)
+    A = BFB(G, False)
+    utils.print_schedule(A, False)
+    utils.print_schedule_bound(G)
+    # visualize.visualize_digraph(G)
+    # visualize.visualize_schedule(G, A, list(G.nodes)[0])
+
+
+def _main7():
+    import expansion
+    G = complete_graph(3)
+    A = BFB(G, False)
+    G, A = expansion.degree_expansion(G, A, 2)
     utils.print_schedule(A, False)
     utils.print_schedule_bound(G)
     visualize.visualize_digraph(G)
@@ -123,4 +172,7 @@ if __name__ == '__main__':
 
     # _main2()    # torus
     # _main3()    # bfb on bidirectional ring
-    _main4()    # Generalized Kautz Graph
+    # _main4()    # Generalized Kautz Graph
+    # _main5()    # circulant test
+    # _main6()    # circulant graph
+    _main7()
