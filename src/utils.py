@@ -9,7 +9,8 @@ _T = TypeVar('_T')
 def pareto_frontier(candidates: List[_T],
                     key1: Callable[[_T], Any],
                     key2: Callable[[_T], Any],
-                    eps2: float = 0
+                    eps2: float,
+                    key3: Callable[[_T], Any],
                     ) -> List[_T]:
 
     L = len(candidates)
@@ -19,7 +20,7 @@ def pareto_frontier(candidates: List[_T],
     pareto_frontier = []
 
     sorted_index = sorted(list(range(L)), key=lambda index: (
-        key1(candidates[index]), key2(candidates[index])))
+        key1(candidates[index]), key2(candidates[index]), key3(candidates[index])))
 
     # 1st element
     c = candidates[sorted_index[0]]

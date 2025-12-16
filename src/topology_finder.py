@@ -15,6 +15,7 @@ class TopologyEntry(NamedTuple):
     TL: int
     TB: float           # estimated bandwidth
     BW_optimal: bool    # if True, has optimal bandwidth; if False, may not have
+    nest_level: int
 
     def print(self):
         bw_opt = "Yes" if self.BW_optimal else "No"
@@ -28,7 +29,7 @@ def line_graph_exp(T: TopologyEntry) -> TopologyEntry:
     topology = f'Line({T.topology})'
     TL = T.TL + 1
     TB = T.TB + 1 / T.N
-    return TopologyEntry(N, d, topology, TL, TB, False)
+    return TopologyEntry(N, d, topology, TL, TB, False, T.nest_level + 1)
 
 
 def degree_exp(T: TopologyEntry, n: int) -> TopologyEntry:
@@ -37,7 +38,7 @@ def degree_exp(T: TopologyEntry, n: int) -> TopologyEntry:
     topology = f'Deg({n}, {T.topology})'
     TL = T.TL + 1
     TB = T.TB + (n - 1) / (n * T.N)
-    return TopologyEntry(N, d, topology, TL, TB, True if T.BW_optimal else False)
+    return TopologyEntry(N, d, topology, TL, TB, True if T.BW_optimal else False, T.nest_level + 1)
 
 
 def cartesian_power(T: TopologyEntry, n: int) -> TopologyEntry:
@@ -46,7 +47,7 @@ def cartesian_power(T: TopologyEntry, n: int) -> TopologyEntry:
     topology = f'Car({n}, {T.topology})'
     TL = T.TL * n
     TB = T.TB * T.N / (T.N - 1) * (T.N ** n - 1) / (T.N ** n)
-    return TopologyEntry(N, d, topology, TL, TB, True if T.BW_optimal else False)
+    return TopologyEntry(N, d, topology, TL, TB, True if T.BW_optimal else False, T.nest_level + 1)
 
 
 def cartessian_prod(T1: TopologyEntry, T2: TopologyEntry) -> TopologyEntry:
@@ -56,7 +57,7 @@ def cartessian_prod(T1: TopologyEntry, T2: TopologyEntry) -> TopologyEntry:
     topology = f'Car({T1.topology}, {T2.topology})'
     TL = T1.TL + T2.TL
     TB = (N - 1) / N
-    return TopologyEntry(N, d, topology, TL, TB, True)
+    return TopologyEntry(N, d, topology, TL, TB, True, T1.nest_level + T2.nest_level + 1)
 
 
 class TopologyFinder:
@@ -83,7 +84,7 @@ class TopologyFinder:
             diameter = int(parts[3])
 
             tp = TopologyEntry(
-                node_num, degree, f'DistReg({name})', diameter, 1 - 1 / node_num, True)
+                node_num, degree, f'DistReg({name})', diameter, 1 - 1 / node_num, True, 0)
             self.try_insert(tp)
 
     def init_topology_table(self) -> None:
@@ -93,16 +94,16 @@ class TopologyFinder:
         '''
         # DBJMod
         self.topology_table[8][2].append(TopologyEntry(
-            8, 2, "DBJMod(2,3)", 4, 7 / 8, True))
+            8, 2, "DBJMod(2,3)", 4, 7 / 8, True, 0))
         self.topology_table[16][2].append(TopologyEntry(
-            16, 2, "DBJMod(2,4)", 5, 15 / 16, True))
+            16, 2, "DBJMod(2,4)", 5, 15 / 16, True, 0))
         self.topology_table[9][3].append(TopologyEntry(
-            9, 3, "DBJMod(3,2)", 3, 8 / 9, True))
+            9, 3, "DBJMod(3,2)", 3, 8 / 9, True, 0))
         self.topology_table[16][4].append(TopologyEntry(
-            16, 4, "DBJMod(4,2)", 3, 15 / 16, True))
+            16, 4, "DBJMod(4,2)", 3, 15 / 16, True, 0))
         # diamond
         self.topology_table[8][2].append(TopologyEntry(
-            8, 2, "diamond", 3, 7 / 8, True))
+            8, 2, "diamond", 3, 7 / 8, True, 0))
 
         # DistReg
         dist_reg_path = 'DistReg/graph.csv'
@@ -120,12 +121,12 @@ class TopologyFinder:
         # uniring
         if d == 1:
             tps.append(TopologyEntry(
-                n, d, f"UniRing({n})", n - 1, optimal_B, True))
+                n, d, f"UniRing({n})", n - 1, optimal_B, True, 0))
 
         # biring
         if d == 2:
             tps.append(TopologyEntry(
-                n, d, f"BiRing({n})", n - 1, optimal_B, True))
+                n, d, f"BiRing({n})", n - 1, optimal_B, True, 0))
 
         return tps
 
@@ -139,20 +140,21 @@ class TopologyFinder:
 
         # circulant(only 2d)
         if d == 4 and n >= 5:
+            '''TODO: why?'''
             a = math.floor(math.sqrt((n - 2) / 2))
             G = graph.circulant_graph(n, [a, a + 1])
             tps.append(TopologyEntry(
-                n, d, f"C({n}, [{a}, {a + 1}])", nx.diameter(G), optimal_B, True))
+                n, d, f"C({n}, [{a}, {a + 1}])", nx.diameter(G), optimal_B, True, 0))
 
         # complete
         if d == n - 1:
             tps.append(TopologyEntry(
-                n, d, f"K({n})", 1, optimal_B, True))
+                n, d, f"K({n})", 1, optimal_B, True, 0))
 
         # complete bipartite
         if d == n // 2 and n % 2 == 0:
             tps.append(TopologyEntry(
-                n, d, f"K({d}, {d})", 2, optimal_B, True))
+                n, d, f"K({d}, {d})", 2, optimal_B, True, 0))
 
         # DBJ
         '''TODO'''
@@ -160,7 +162,7 @@ class TopologyFinder:
         # generalized kautz with BW optimality guarantee
         if n == d + 1:
             tps.append(TopologyEntry(
-                n, d, f"Pi({d},{n})", 1, optimal_B, True))
+                n, d, f"Pi({d},{n})", 1, optimal_B, True, 0))
 
         return tps
 
@@ -176,7 +178,7 @@ class TopologyFinder:
                 A = BFB(G, False)
                 tl, tb = utils.get_TL_TB(G, A)
                 tps.append(TopologyEntry(
-                    n, d, f"g_kautz({d},{n})", tl, tb, False))
+                    n, d, f"g_kautz({d},{n})", tl, tb, False, 0))
 
         return tps
 
@@ -197,7 +199,7 @@ class TopologyFinder:
                 tps = self.basic_graph_set1(n, d)
                 self.topology_table[n][d].extend(tps)
                 self.topology_table[n][d] = utils.pareto_frontier(
-                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4)
+                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4, key3=lambda x: x.nest_level)
 
                 for n2 in range(2, n + 1):
                     for d2 in range(1, d + 1):
@@ -216,7 +218,7 @@ class TopologyFinder:
                 tps = self.basic_graph_set2(n, d)
                 self.topology_table[n][d].extend(tps)
                 self.topology_table[n][d] = utils.pareto_frontier(
-                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4)
+                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4, key3=lambda x: x.nest_level)
 
                 for tp in self.topology_table[n][d]:
                     # line graph expansion
