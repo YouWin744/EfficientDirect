@@ -5,6 +5,7 @@ import networkx as nx
 from bfb_schedule import BFB
 import utils
 import os
+from tqdm import tqdm
 
 
 class TopologyEntry(NamedTuple):
@@ -65,6 +66,8 @@ class TopologyFinder:
         self.topology_table = {n: {d: [] for d in range(
             1, max_d + 1)} for n in range(1, max_N + 1)}
 
+        self.init_topology_table()
+
     def load_DistReg_topologies(self, filepath: str) -> None:
         with open(filepath, 'r') as f:
             lines = f.readlines()
@@ -83,7 +86,34 @@ class TopologyFinder:
                 node_num, degree, f'DistReg({name})', diameter, 1 - 1 / node_num, True)
             self.try_insert(tp)
 
-    def basic_graph(self, n, d) -> list[TopologyEntry]:
+    def init_topology_table(self) -> None:
+        '''
+        init topology table with topologies with perticular structures,
+        including: DBJMod, diamond, DistReg
+        '''
+        # DBJMod
+        self.topology_table[8][2].append(TopologyEntry(
+            8, 2, "DBJ(2,3)", 4, 7 / 8, True))
+        self.topology_table[16][2].append(TopologyEntry(
+            16, 2, "DBJ(2,4)", 5, 15 / 16, True))
+        self.topology_table[9][3].append(TopologyEntry(
+            9, 3, "DBJ(3,2)", 3, 8 / 9, True))
+        self.topology_table[16][4].append(TopologyEntry(
+            16, 4, "DBJ(4,2)", 3, 15 / 16, True))
+
+        # diamond
+        self.topology_table[8][2].append(TopologyEntry(
+            8, 2, "diamond", 3, 7 / 8, True))
+
+        # DistReg
+        dist_reg_path = 'DistReg/graph.csv'
+        if os.path.exists(dist_reg_path):
+            self.load_DistReg_topologies(dist_reg_path)
+
+    def basic_graph_set1(self, n, d) -> list[TopologyEntry]:
+        '''
+        uniring, biring
+        '''
         tps: list[TopologyEntry] = []
 
         optimal_B = (n - 1) / n
@@ -97,6 +127,16 @@ class TopologyFinder:
         if d == 2:
             tps.append(TopologyEntry(
                 n, d, f"BiRing({n})", n - 1, optimal_B, True))
+
+        return tps
+
+    def basic_graph_set2(self, n, d) -> list[TopologyEntry]:
+        '''
+        circulant, complete, complete bipartite, DBJ, generalized kautz(with BW optimality guarantee)
+        '''
+        tps: list[TopologyEntry] = []
+
+        optimal_B = (n - 1) / n
 
         # circulant(only 2d)
         if d == 4 and n >= 5:
@@ -115,76 +155,95 @@ class TopologyFinder:
             tps.append(TopologyEntry(
                 n, d, f"K({d}, {d})", 2, optimal_B, True))
 
-        # diamond
-        if d == 2 and n == 8:
-            tps.append(TopologyEntry(
-                n, d, f"diamond", 3, optimal_B, True))
-
         # DBJ
         '''TODO'''
 
-        # DBJMod
-        if d == 2 and n == 8:
-            tps.append(TopologyEntry(
-                n, d, f"DBJ(2,3)", 4, optimal_B, True))
-        if d == 2 and n == 16:
-            tps.append(TopologyEntry(
-                n, d, f"DBJ(2,4)", 5, optimal_B, True))
-        if d == 3 and n == 9:
-            tps.append(TopologyEntry(
-                n, d, f"DBJ(3,2)", 3, optimal_B, True))
-        if d == 4 and n == 16:
-            tps.append(TopologyEntry(
-                n, d, f"DBJ(4,2)", 3, optimal_B, True))
-
-        # DistReg
-        # handled in load_DistReg_topologies()
-
-        # generalized kautz
+        # generalized kautz with BW optimality guarantee
         if n == d + 1:
             tps.append(TopologyEntry(
                 n, d, f"Pi({d},{n})", 1, optimal_B, True))
 
-        # '''TODO'''
-        # generalized kautz graph 有自环，变换后不一定是正则图
-        # elif n > d + 1:
-        #     G = graph.generalized_kautz_graph(d, n)
-        #     A = BFB(G, False)
-        #     tl, tb = utils.get_TL_TB(G, A)
+        return tps
 
-        #     tps.append(TopologyEntry(n, d, f"g_kautz({d},{n})", tl, tb, False))
+    def basic_graph_set3(self, n, d) -> list[TopologyEntry]:
+        '''
+        generalized kautz(with no BW optimality guarantee)
+        '''
+        tps: list[TopologyEntry] = []
+
+        if n > d + 1:
+            G = graph.generalized_kautz_graph(d, n)
+            if nx.is_strongly_connected(G):
+                A = BFB(G, False)
+                tl, tb = utils.get_TL_TB(G, A)
+                tps.append(TopologyEntry(
+                    n, d, f"g_kautz({d},{n})", tl, tb, False))
 
         return tps
 
-    def try_insert(self, tp: TopologyEntry) -> None:
+    def try_insert(self, tp: TopologyEntry) -> bool:
         if tp.N <= self.max_N and tp.d <= self.max_d:
             self.topology_table[tp.N][tp.d].append(tp)
+            return True
+        return False
 
-    def search(self, print_details=False) -> None:
-        dist_reg_path = 'DistReg/graph.csv'
-        if os.path.exists(dist_reg_path):
-            self.load_DistReg_topologies(dist_reg_path)
-
-        for n in range(2, self.max_N + 1):
+    def search(self, print_tqdm: bool = False) -> None:
+        # add graphs from basic graph set 1
+        # try cartesian product expansion and cartesian power expansion
+        n_range1 = range(2, self.max_N + 1)
+        if print_tqdm:
+            n_range1 = tqdm(n_range1, desc="Pass1")
+        for n in n_range1:
             for d in range(1, self.max_d + 1):
-                tps = self.basic_graph(n, d)
+                tps = self.basic_graph_set1(n, d)
                 self.topology_table[n][d].extend(tps)
                 self.topology_table[n][d] = utils.pareto_frontier(
-                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps=1e-4)
+                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4)
+
+                for n2 in range(2, n + 1):
+                    for d2 in range(1, d + 1):
+                        if n * n2 <= self.max_N and d + d2 <= self.max_d:
+                            for tp1 in self.topology_table[n][d]:
+                                for tp2 in self.topology_table[n2][d2]:
+                                    self.try_insert(cartessian_prod(tp1, tp2))
+
+        # add graphs from basic graph set 2
+        # try line graph, degree, cartesian power expansion
+        n_range2 = range(2, self.max_N + 1)
+        if print_tqdm:
+            n_range2 = tqdm(n_range2, desc="Pass2")
+        for n in n_range2:
+            for d in range(1, self.max_d + 1):
+                tps = self.basic_graph_set2(n, d)
+                self.topology_table[n][d].extend(tps)
+                self.topology_table[n][d] = utils.pareto_frontier(
+                    self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4)
 
                 for tp in self.topology_table[n][d]:
+                    # line graph expansion
                     if tp.d > 1:
                         self.try_insert(line_graph_exp(tp))
-                    self.try_insert(degree_exp(tp, 2))
-                    self.try_insert(cartesian_power(tp, 2))
-                    self.try_insert(cartesian_power(tp, 3))
-                    '''TODO'''
-                    # more expansion strategies
 
-                if print_details:
-                    print(f"\nN={n}, d={d}:\n")
-                    for tp in self.topology_table[n][d]:
-                        tp.print()
+                    # degree expansion
+                    i = 2
+                    while self.try_insert(degree_exp(tp, i)):
+                        i += 1
+
+                    # cartesian power expansion
+                    i = 2
+                    while self.try_insert(cartesian_power(tp, i)):
+                        i += 1
+
+        # add graphs from basic graph set 3
+        # n_range3 = range(2, self.max_N + 1)
+        # if print_tqdm:
+        #     n_range3 = tqdm(n_range3, desc="Pass3")
+        # for n in n_range3:
+        #     for d in range(1, self.max_d + 1):
+        #         tps = self.basic_graph_set3(n, d)
+        #         self.topology_table[n][d].extend(tps)
+        #         self.topology_table[n][d] = utils.pareto_frontier(
+        #             self.topology_table[n][d], key1=lambda x: x.TL, key2=lambda x: x.TB, eps2=1e-4)
 
     def print_topologies(self) -> None:
         for n in range(2, self.max_N + 1):
@@ -197,5 +256,5 @@ class TopologyFinder:
 
 if __name__ == "__main__":
     tf = TopologyFinder(256, 4)
-    tf.search(print_details=True)
-    # tf.print_topologies()
+    tf.search(print_tqdm=True)
+    tf.print_topologies()

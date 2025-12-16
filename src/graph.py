@@ -146,8 +146,8 @@ def _main5():
 
 def _main6():
     # G = circulant_graph(4, [1, 2], False)
-    G = circulant_graph(16, [2, 3], False)
-    A = BFB(G, False)
+    G = circulant_graph(128, [7, 8], False)
+    A = BFB(G, True)
     utils.print_schedule(A, False)
     utils.print_schedule_bound(G)
     # visualize.visualize_digraph(G)
@@ -174,5 +174,5 @@ if __name__ == '__main__':
     # _main3()    # bfb on bidirectional ring
     # _main4()    # Generalized Kautz Graph
     # _main5()    # circulant test
-    # _main6()    # circulant graph
-    _main7()
+    _main6()    # circulant graph
+    # _main7()

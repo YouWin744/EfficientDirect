@@ -9,7 +9,7 @@ _T = TypeVar('_T')
 def pareto_frontier(candidates: List[_T],
                     key1: Callable[[_T], Any],
                     key2: Callable[[_T], Any],
-                    eps: float = 0
+                    eps2: float = 0
                     ) -> List[_T]:
 
     L = len(candidates)
@@ -31,7 +31,7 @@ def pareto_frontier(candidates: List[_T],
         current_candidate = candidates[sorted_index[i]]
         current_key2 = key2(current_candidate)
 
-        if current_key2 + eps < min_key2:
+        if current_key2 + eps2 < min_key2:
             min_key2 = current_key2
             pareto_frontier.append(current_candidate)
 
@@ -124,11 +124,11 @@ def get_TL_TB(G: nx.DiGraph, A: Schedule):
     in_degrees = [d for n, d in G.in_degree()]
     is_in_regular = all(d == in_degrees[0] for d in in_degrees)
 
-    assert is_in_regular, "not regular graph"
-    assert nx.is_strongly_connected(G), "not connected graph"
-
     n = G.number_of_nodes()
     d = in_degrees[0]
+
+    assert is_in_regular, f"not regular graph, N={n}"
+    assert nx.is_strongly_connected(G), f"not connected graph, N={n}, d={d}"
 
     U = 0
     time_steps = sorted(A.keys())
