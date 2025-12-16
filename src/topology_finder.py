@@ -93,14 +93,13 @@ class TopologyFinder:
         '''
         # DBJMod
         self.topology_table[8][2].append(TopologyEntry(
-            8, 2, "DBJ(2,3)", 4, 7 / 8, True))
+            8, 2, "DBJMod(2,3)", 4, 7 / 8, True))
         self.topology_table[16][2].append(TopologyEntry(
-            16, 2, "DBJ(2,4)", 5, 15 / 16, True))
+            16, 2, "DBJMod(2,4)", 5, 15 / 16, True))
         self.topology_table[9][3].append(TopologyEntry(
-            9, 3, "DBJ(3,2)", 3, 8 / 9, True))
+            9, 3, "DBJMod(3,2)", 3, 8 / 9, True))
         self.topology_table[16][4].append(TopologyEntry(
-            16, 4, "DBJ(4,2)", 3, 15 / 16, True))
-
+            16, 4, "DBJMod(4,2)", 3, 15 / 16, True))
         # diamond
         self.topology_table[8][2].append(TopologyEntry(
             8, 2, "diamond", 3, 7 / 8, True))
